@@ -15,6 +15,9 @@ on:
 
 env:
   IMAGE_NAME: mariadb-client
+  DB_NAME: testdb
+  DB_USER: dbuser
+  DB_PASS: dbpass
 
 jobs:
   # Push image to GitHub Packages.
@@ -27,11 +30,31 @@ jobs:
       contents: read
       packages: write
 
+    services:
+      mariadb:
+        image: mariadb:10.5.10
+        env:
+          MARIADB_ALLOW_EMPTY_PASSWORD: yes
+          MARIADB_DATABASE: ${{ env.DB_NAME }}
+          MARIADB_USER: ${{ env.DB_USER }}
+          MARIADB_PASSWORD: ${{ env.DB_PASS }}
+          MARIADB_INITDB_SKIP_TZINFO: yes
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - uses: actions/checkout@v2
 
       - name: Build image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
+
+      - name: Test image
+        run: |
+          echo "SELECT 'Test' as ' ';" | \
+            docker run --rm --network ${{ job.container.network}} \
+            $IMAGE_NAME:latest -A -B -h mariadb -D$DB_NAME -u$DB_USER -p$DB_PASS \
+            || exit 1; \
+          docker run --rm --network ${{ job.container.network}} --entrypoint mysqladmin \
+            $IMAGE_NAME:latest ping -h$DB_HOST -u$DB_USER -p$DB_PASS;
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
