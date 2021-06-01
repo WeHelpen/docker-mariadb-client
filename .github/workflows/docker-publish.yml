@@ -50,11 +50,12 @@ jobs:
       - name: Test image
         run: |
           echo "SELECT 'Test' as ' ';" | \
-            docker run --rm --network ${{ job.container.network}} \
-            $IMAGE_NAME:latest -A -B -h mariadb -D$DB_NAME -u$DB_USER -p$DB_PASS \
+            docker run --rm --network ${{ job.container.network}} --interactive \
+            $IMAGE_NAME:latest -A -B -h mariadb -D $DB_NAME -u $DB_USER -p$DB_PASS \
             || exit 1; \
           docker run --rm --network ${{ job.container.network}} --entrypoint mysqladmin \
-            $IMAGE_NAME:latest ping -h$DB_HOST -u$DB_USER -p$DB_PASS;
+            $IMAGE_NAME:latest ping -h mariadb -u $DB_USER -p$DB_PASS \
+          ;
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
