@@ -1,4 +1,4 @@
-FROM debian:buster-20210511-slim
+FROM debian:buster-20210621-slim
 
 RUN apt-get update && apt-get install --no-install-recommends -y mariadb-client zutils bzip2 lzip xz-utils \
     && rm -rf /var/lib/apt/lists/* && rm -rf /var/log/*
